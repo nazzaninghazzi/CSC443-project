@@ -1,12 +1,16 @@
 #include "AVLTree.h"
 #include <iostream>
+#include <fstream>
 #include <utility>
+#include <sys/stat.h>
+#include <sys/types.h>
 using namespace std;
 
 
 memtable::memtable(int memtable_size) {
 	this->current_size = 0;
 	this->memtable_size = memtable_size;
+	this->sst_count = 0;
 	this->root = NULL;
 	this->all_nodes_ptrs = new node*[memtable_size];
 	allocate();
@@ -108,7 +112,7 @@ memtable::node* memtable::put_helper(int key, int value, node* tree) {
 	return tree;
 }
 
-void memtable::put(int key, int value) {
+int memtable::put(int key, int value) {
 	root = put_helper(key, value, root);
 	current_size ++;
 
@@ -126,14 +130,35 @@ void memtable::put(int key, int value) {
 //			     std::cout << "Pair " << i << ": (" << SST[i].first << ", " << SST[i].second << ")\n";
 //			 }
 
-		 // TODO: transfer data to SST. SST should be saved in the storage (within a directory)
+		std::string dir = "SSTs";
+        if (mkdir(dir.c_str(), 0777) == -1) {
+            if (errno != EEXIST) {
+                std::cerr << "Failed to create directory!" << std::endl;
+                return 1;
+            }
+        }
+
+        std::string file_path = dir + "/" + std::to_string(this->sst_count) + "_SST";
+        std::ofstream file(file_path);
+        if (!file) {
+            std::cerr << "Failed to open file!" << std::endl;
+            return 1;
+        }
+
+        for (int i = 0; i < memtable_size; ++i) {
+            file << "(" << SST[i].first << ", " << SST[i].second << ")\n";
+        }
+        
+        file.close();
+
+        this->sst_count++;
 
 		 // free the previous memtable
 		 deallocate();
 		 // allocate a new memtable
 		 allocate();
 	}
-
+	return 0;
 }
 
 int memtable::get_helper(int key, node* tree) {

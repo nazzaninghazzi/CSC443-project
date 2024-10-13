@@ -18,6 +18,7 @@ public:
 
     int memtable_size;
     int current_size;
+    int sst_count;
     node** all_nodes_ptrs;
     node* root;
 
@@ -31,7 +32,7 @@ public:
     node* left_right_rotate(node* &x);
     node* right_left_rotate(node* &x);
     node* put_helper(int key, int value, node* tree);
-    void put(int key, int value);
+    int put(int key, int value);
     int get_helper(int key, node* tree);
     int get(int key);
     void traverse(node* t, std::pair<int, int>* traversed_nodes, int& curr_idx);
